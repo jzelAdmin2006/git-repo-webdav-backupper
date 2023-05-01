@@ -15,6 +15,7 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	implementation 'org.eclipse.jgit:org.eclipse.jgit:5.13.0.202109080827-r'
 }
 
 tasks.named('test') {

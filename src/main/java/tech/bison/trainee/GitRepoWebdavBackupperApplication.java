@@ -9,5 +9,4 @@ public class GitRepoWebdavBackupperApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(GitRepoWebdavBackupperApplication.class, args);
 	}
-
 }

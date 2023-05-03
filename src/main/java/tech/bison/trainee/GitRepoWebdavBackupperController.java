@@ -103,15 +103,8 @@ public class GitRepoWebdavBackupperController {
 	private static void uploadToWebDav(Path filePath, String webdavUrl, String username, String password)
 			throws IOException {
 		Sardine sardine = SardineFactory.begin(username, password);
-
-		try {
-			String remotePath = webdavUrl + "/" + filePath.getFileName().toString();
-			sardine.put(remotePath, Files.readAllBytes(filePath));
-			System.out.println("File uploaded successfully!");
-		} catch (IOException e) {
-			System.err.println("File upload failed:");
-			e.printStackTrace();
-		}
+		String remotePath = webdavUrl + "/" + filePath.getFileName().toString();
+		sardine.put(remotePath, Files.readAllBytes(filePath));
 	}
 
 	private static String extractRepoName(String repoUrl) {

@@ -92,12 +92,10 @@ public class GitRepoWebdavBackupperController {
 			throws GitAPIException {
 		String repoName = extractRepoName(repoUrl);
 		File localDirectory = new File(Paths.get(localPath, repoName).toString());
-
-		try (Git git = Git.cloneRepository().setURI(repoUrl).setDirectory(localDirectory)
+		Git.cloneRepository().setURI(repoUrl).setDirectory(localDirectory)
 				.setCredentialsProvider(new UsernamePasswordCredentialsProvider(username, password)).setNoCheckout(true)
-				.call()) {
-			return localDirectory.toPath();
-		}
+				.call().close();
+		return localDirectory.toPath();
 	}
 
 	private static void uploadToWebDav(Path filePath, String webdavUrl, String username, String password)

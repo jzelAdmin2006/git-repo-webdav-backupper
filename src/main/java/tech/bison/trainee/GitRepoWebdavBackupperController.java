@@ -18,6 +18,7 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,10 +30,9 @@ import com.google.common.hash.Hashing;
 public class GitRepoWebdavBackupperController {
 
 	@PostMapping("/backup")
-	public ResponseEntity<String> backupRepo(@RequestHeader String token) {
+	public ResponseEntity<String> backupRepo(@RequestHeader String token, @RequestBody String repoUrl) {
 		String tokenHash = System.getenv("TOKEN_HASH");
 		if (authorizationIsOK(token, tokenHash)) {
-			String repoUrl = System.getenv("REPO_URL");
 			String localPath = System.getenv("LOCAL_PATH");
 			String username = System.getenv("USERNAME");
 			String password = System.getenv("PASSWORD");

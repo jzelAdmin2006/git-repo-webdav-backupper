@@ -69,22 +69,20 @@ public class GitRepoWebdavBackupperController {
 
 	private Path archiveRepository(Path repoDirectory) throws IOException {
 		Path destinationPath = repoDirectory.getParent().resolve(repoDirectory.getFileName().toString() + ".zip");
-
-		try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(destinationPath))) {
-			zos.setLevel(0);
-
-			Files.walkFileTree(repoDirectory, new SimpleFileVisitor<Path>() {
-				@Override
-				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-					String relativePath = repoDirectory.relativize(file).toString().replace("\\", "/");
-					ZipEntry entry = new ZipEntry(relativePath);
-					zos.putNextEntry(entry);
-					Files.copy(file, zos);
-					zos.closeEntry();
-					return FileVisitResult.CONTINUE;
-				}
-			});
-		}
+		ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(destinationPath));
+		zos.setLevel(0);
+		Files.walkFileTree(repoDirectory, new SimpleFileVisitor<Path>() {
+			@Override
+			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+				String relativePath = repoDirectory.relativize(file).toString().replace("\\", "/");
+				ZipEntry entry = new ZipEntry(relativePath);
+				zos.putNextEntry(entry);
+				Files.copy(file, zos);
+				zos.closeEntry();
+				return FileVisitResult.CONTINUE;
+			}
+		});
+		zos.close();
 		return destinationPath;
 	}
 

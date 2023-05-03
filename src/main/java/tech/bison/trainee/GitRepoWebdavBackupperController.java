@@ -18,6 +18,9 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.github.sardine.Sardine;
+import com.github.sardine.SardineFactory;
+
 @RestController
 public class GitRepoWebdavBackupperController {
 
@@ -76,9 +79,18 @@ public class GitRepoWebdavBackupperController {
 		}
 	}
 
-	private static void uploadToWebDav(Path localDirectory, String webdavUrl, String username, String password)
+	private static void uploadToWebDav(Path filePath, String webdavUrl, String username, String password)
 			throws IOException {
-		// ToDO: Upload ZIP file to WebDAV
+		Sardine sardine = SardineFactory.begin(username, password);
+
+		try {
+			String remotePath = webdavUrl + "/" + filePath.getFileName().toString();
+			sardine.put(remotePath, Files.readAllBytes(filePath));
+			System.out.println("File uploaded successfully!");
+		} catch (IOException e) {
+			System.err.println("File upload failed:");
+			e.printStackTrace();
+		}
 	}
 
 	private static String extractRepoName(String repoUrl) {

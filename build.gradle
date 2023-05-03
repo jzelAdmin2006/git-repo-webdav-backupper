@@ -18,6 +18,7 @@ dependencies {
 	implementation 'org.eclipse.jgit:org.eclipse.jgit:5.13.0.202109080827-r'
 	implementation group: 'com.github.lookfirst', name: 'sardine', version: '5.10'
 	implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
+	implementation group: 'com.google.guava', name: 'guava', version: '31.1-jre'
 }
 
 tasks.named('test') {

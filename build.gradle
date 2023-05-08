@@ -19,6 +19,7 @@ dependencies {
 	implementation group: 'com.github.lookfirst', name: 'sardine', version: '5.10'
 	implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
 	implementation group: 'com.google.guava', name: 'guava', version: '31.1-jre'
+	implementation group: 'net.lingala.zip4j', name: 'zip4j', version: '2.11.5'
 }
 
 tasks.named('test') {

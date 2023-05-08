@@ -3,14 +3,9 @@ package tech.bison.trainee;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
@@ -25,6 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.github.sardine.Sardine;
 import com.github.sardine.SardineFactory;
 import com.google.common.hash.Hashing;
+
+import net.lingala.zip4j.ZipFile;
+import net.lingala.zip4j.model.ZipParameters;
 
 @RestController
 public class GitRepoWebdavBackupperController {
@@ -69,20 +67,8 @@ public class GitRepoWebdavBackupperController {
 
 	private Path archiveRepository(Path repoDirectory) throws IOException {
 		Path destinationPath = repoDirectory.getParent().resolve(repoDirectory.getFileName().toString() + ".zip");
-		ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(destinationPath));
-		zos.setLevel(0);
-		Files.walkFileTree(repoDirectory, new SimpleFileVisitor<Path>() {
-			@Override
-			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-				String relativePath = repoDirectory.relativize(file).toString().replace("\\", "/");
-				ZipEntry entry = new ZipEntry(relativePath);
-				zos.putNextEntry(entry);
-				Files.copy(file, zos);
-				zos.closeEntry();
-				return FileVisitResult.CONTINUE;
-			}
-		});
-		zos.close();
+		ZipFile zipFile = new ZipFile(destinationPath.toFile());
+		zipFile.createSplitZipFileFromFolder(repoDirectory.toFile(), new ZipParameters(), true, 10000000);
 		return destinationPath;
 	}
 

@@ -55,9 +55,8 @@ public class GitRepoWebdavBackupperController {
 		try {
 			Path repoDirectory = cloneRepository(repoUrl, localPath, username, password);
 			Path repoArchive = archiveRepository(repoDirectory);
-			deleteLocalDirectory(repoDirectory);
 			uploadToWebDav(repoArchive, webdavUrl, webdavUsername, webdavPassword);
-			FileUtils.delete(repoArchive.toFile());
+			FileUtils.cleanDirectory(Path.of(localPath).toFile());
 			return ResponseEntity.status(200).body("Backup created");
 		} catch (GitAPIException | IOException e) {
 			System.err.println("Error cloning repository and uploading to WebDAV: " + e.getMessage());
@@ -96,9 +95,5 @@ public class GitRepoWebdavBackupperController {
 		String[] parts = repoUrl.split("/");
 		String repoNameWithExtension = parts[parts.length - 1];
 		return repoNameWithExtension.replace(".git", "");
-	}
-
-	private static void deleteLocalDirectory(Path localDirectory) throws IOException {
-		FileUtils.deleteDirectory(localDirectory.toFile());
 	}
 }

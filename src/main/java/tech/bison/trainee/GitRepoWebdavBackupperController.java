@@ -23,6 +23,7 @@ import com.google.common.hash.Hashing;
 
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.model.ZipParameters;
+import net.lingala.zip4j.model.enums.CompressionLevel;
 
 @RestController
 public class GitRepoWebdavBackupperController {
@@ -68,7 +69,9 @@ public class GitRepoWebdavBackupperController {
 	private Path archiveRepository(Path repoDirectory) throws IOException {
 		Path destinationPath = repoDirectory.getParent().resolve(repoDirectory.getFileName().toString() + ".zip");
 		ZipFile zipFile = new ZipFile(destinationPath.toFile());
-		zipFile.createSplitZipFileFromFolder(repoDirectory.toFile(), new ZipParameters(), true, 10000000);
+		ZipParameters zipParams = new ZipParameters();
+		zipParams.setCompressionLevel(CompressionLevel.NO_COMPRESSION);
+		zipFile.createSplitZipFileFromFolder(repoDirectory.toFile(), zipParams, true, 10000000);
 		return destinationPath;
 	}
 

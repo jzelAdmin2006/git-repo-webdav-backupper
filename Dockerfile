@@ -15,6 +15,6 @@ RUN mkdir /tmpasdfqwert
 
 EXPOSE 8080
 
-COPY --from=build /build/libs/spring-demo-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=build /build/libs/git-repo-webdav-backupper-0.0.1-SNAPSHOT.jar app.jar
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

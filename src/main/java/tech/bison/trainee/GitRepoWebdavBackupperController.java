@@ -3,9 +3,9 @@ package tech.bison.trainee;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
@@ -39,7 +39,8 @@ public class GitRepoWebdavBackupperController {
 			String webdavUsername = System.getenv("WEBDAV_USERNAME");
 			String webdavPassword = System.getenv("WEBDAV_PASSWORD");
 
-			return proceedBackup(repoUrl, localPath, username, password, webdavUrl, webdavUsername, webdavPassword);
+			return proceedBackup(repoUrl, Path.of(localPath), username, password, webdavUrl, webdavUsername,
+					webdavPassword);
 		} else {
 			return ResponseEntity.status(401).body("Unauthorized");
 		}
@@ -50,13 +51,13 @@ public class GitRepoWebdavBackupperController {
 				: tokenHash.equals(Hashing.sha256().hashString(token, StandardCharsets.UTF_8).toString());
 	}
 
-	private ResponseEntity<String> proceedBackup(String repoUrl, String localPath, String username, String password,
+	private ResponseEntity<String> proceedBackup(String repoUrl, Path localPath, String username, String password,
 			String webdavUrl, String webdavUsername, String webdavPassword) {
 		try {
 			Path repoDirectory = cloneRepository(repoUrl, localPath, username, password);
-			Path repoArchive = archiveRepository(repoDirectory);
-			uploadToWebDav(repoArchive, webdavUrl, webdavUsername, webdavPassword);
-			FileUtils.cleanDirectory(Path.of(localPath).toFile());
+			archiveRepository(repoDirectory);
+			uploadToWebDav(localPath, webdavUrl, webdavUsername, webdavPassword);
+			FileUtils.cleanDirectory(localPath.toFile());
 			return ResponseEntity.status(200).body("Backup created");
 		} catch (GitAPIException | IOException e) {
 			System.err.println("Error cloning repository and uploading to WebDAV: " + e.getMessage());
@@ -65,30 +66,37 @@ public class GitRepoWebdavBackupperController {
 		}
 	}
 
-	private Path archiveRepository(Path repoDirectory) throws IOException {
+	private void archiveRepository(Path repoDirectory) throws IOException {
 		Path destinationPath = repoDirectory.getParent().resolve(repoDirectory.getFileName().toString() + ".zip");
 		ZipFile zipFile = new ZipFile(destinationPath.toFile());
 		ZipParameters zipParams = new ZipParameters();
 		zipParams.setCompressionLevel(CompressionLevel.NO_COMPRESSION);
 		zipFile.createSplitZipFileFromFolder(repoDirectory.toFile(), zipParams, true, 10000000);
-		return destinationPath;
 	}
 
-	private Path cloneRepository(String repoUrl, String localPath, String username, String password)
+	private Path cloneRepository(String repoUrl, Path localPath, String username, String password)
 			throws GitAPIException {
 		String repoName = extractRepoName(repoUrl);
-		File localDirectory = new File(Paths.get(localPath, repoName).toString());
+		File localDirectory = localPath.resolve(repoName).toFile();
 		Git.cloneRepository().setURI(repoUrl).setDirectory(localDirectory)
 				.setCredentialsProvider(new UsernamePasswordCredentialsProvider(username, password)).setNoCheckout(true)
 				.call().close();
 		return localDirectory.toPath();
 	}
 
-	private static void uploadToWebDav(Path filePath, String webdavUrl, String username, String password)
+	private static void uploadToWebDav(Path sourcePath, String webdavUrl, String username, String password)
 			throws IOException {
 		Sardine sardine = SardineFactory.begin(username, password);
-		String remotePath = webdavUrl + "/" + filePath.getFileName().toString();
-		sardine.put(remotePath, Files.readAllBytes(filePath));
+
+		DirectoryStream<Path> stream = Files.newDirectoryStream(sourcePath);
+		for (Path filePath : stream) {
+			if (Files.isRegularFile(filePath)) {
+				String remotePath = webdavUrl + "/" + filePath.getFileName().toString();
+				sardine.put(remotePath, Files.readAllBytes(filePath));
+			}
+		}
+		stream.close();
+		// ToDo: Always finally close resources
 	}
 
 	private static String extractRepoName(String repoUrl) {

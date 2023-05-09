@@ -9,6 +9,8 @@ RUN ./gradlew bootJar --no-daemon
 
 FROM openjdk:17-jdk-slim
 
+WORKDIR /
+
 RUN mkdir /tmp
 
 EXPOSE 8080

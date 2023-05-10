@@ -6,6 +6,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.Git;
@@ -67,7 +69,8 @@ public class GitRepoWebdavBackupperController {
 	}
 
 	private void archiveRepository(Path repoDirectory) throws IOException {
-		Path destinationPath = repoDirectory.getParent().resolve(repoDirectory.getFileName().toString() + ".zip");
+		Path destinationPath = repoDirectory.getParent().resolve(repoDirectory.getFileName().toString()
+				+ new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".zip");
 		ZipFile zipFile = new ZipFile(destinationPath.toFile());
 		ZipParameters zipParams = new ZipParameters();
 		zipParams.setCompressionLevel(CompressionLevel.NO_COMPRESSION);

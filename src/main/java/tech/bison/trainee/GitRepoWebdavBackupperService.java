@@ -82,24 +82,24 @@ public class GitRepoWebdavBackupperService {
 	private Path cloneRepository(String repoUrl) throws GitAPIException {
 		String repoName = extractRepoName(repoUrl);
 		File localDirectory = GitRepoWebdavBackupperService.LOCAL_PATH.resolve(repoName).toFile();
-		Git.cloneRepository().setURI(repoUrl).setDirectory(localDirectory)
+		try (Git git = Git.cloneRepository().setURI(repoUrl).setDirectory(localDirectory)
 				.setCredentialsProvider(new UsernamePasswordCredentialsProvider(GIT_USERNAME, GIT_PASSWORD))
-				.setNoCheckout(true).call().close();
-		return localDirectory.toPath();
+				.setNoCheckout(true).call()) {
+			return localDirectory.toPath();
+		}
 	}
 
 	private static void uploadToWebDav() throws IOException {
 		Sardine sardine = SardineFactory.begin(WEBDAV_USERNAME, WEBDAV_PASSWORD);
 
-		DirectoryStream<Path> stream = Files.newDirectoryStream(GitRepoWebdavBackupperService.LOCAL_PATH);
-		for (Path filePath : stream) {
-			if (Files.isRegularFile(filePath)) {
-				String remotePath = WEBDAV_URL + "/" + filePath.getFileName().toString();
-				sardine.put(remotePath, Files.readAllBytes(filePath));
+		try (DirectoryStream<Path> stream = Files.newDirectoryStream(GitRepoWebdavBackupperService.LOCAL_PATH)) {
+			for (Path filePath : stream) {
+				if (Files.isRegularFile(filePath)) {
+					String remotePath = WEBDAV_URL + "/" + filePath.getFileName().toString();
+					sardine.put(remotePath, Files.readAllBytes(filePath));
+				}
 			}
 		}
-		stream.close();
-		// ToDo: Always finally close resources
 	}
 
 	private static String extractRepoName(String repoUrl) {

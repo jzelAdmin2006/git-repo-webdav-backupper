@@ -84,10 +84,10 @@ public class GitRepoWebdavBackupperService {
 		Sardine sardine = SardineFactory.begin(WEBDAV_USERNAME, WEBDAV_PASSWORD);
 		List<DavResource> resources = sardine.list(WEBDAV_URL);
 		Date lastBackupped = NEVER;
+		String repoName = extractRepoName(repoUrl);
+		String pattern = String.format("^%s\\d{14}\\.zip$", repoName);
 		for (DavResource res : resources) {
 			String fileName = res.getName();
-			String repoName = extractRepoName(repoUrl);
-			String pattern = String.format("^%s\\d{14}\\.zip", repoName);
 			if (res.getName().matches(pattern)) {
 				SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 				Date backupDate = dateFormat.parse(fileName.substring(fileName.length() - 18, fileName.length() - 4));

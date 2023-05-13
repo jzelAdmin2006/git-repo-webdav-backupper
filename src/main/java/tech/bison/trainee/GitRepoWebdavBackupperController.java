@@ -15,10 +15,12 @@ public class GitRepoWebdavBackupperController {
 	private static final String TOKEN_HASH = System.getenv("TOKEN_HASH");
 
 	@PostMapping("/backup")
-	public ResponseEntity<String> backupRepo(@RequestHeader String token, @RequestBody String repoUrl) {
+	public ResponseEntity<String> backupRepos(@RequestHeader String token, @RequestBody String repoUrls) {
 		if (authorizationIsOK(token)) {
 			try {
-				GitRepoWebdavBackupperService.getBackupRequests().add(repoUrl);
+				for (String repoUrl : repoUrls.split("\n")) {
+					GitRepoWebdavBackupperService.getBackupRequests().add(repoUrl.trim());
+				}
 				return ResponseEntity.status(202).body("Backup creation queued");
 			} catch (Exception e) {
 				System.err.println("Error creating queue");

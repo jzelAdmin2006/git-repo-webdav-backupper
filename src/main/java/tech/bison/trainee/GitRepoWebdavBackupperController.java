@@ -1,5 +1,6 @@
 package tech.bison.trainee;
 
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,8 @@ public class GitRepoWebdavBackupperController {
 	public ResponseEntity<String> backupRepos(@RequestHeader String token, @RequestBody String repoUrls) {
 		if (authorizationIsOK(token)) {
 			try {
-				for (String repoUrl : repoUrls.split("\n")) {
+				String decodedUrls = URLDecoder.decode(repoUrls, StandardCharsets.UTF_8.name());
+				for (String repoUrl : decodedUrls.split("\n")) {
 					GitRepoWebdavBackupperService.getBackupRequests().add(repoUrl.trim());
 				}
 				return ResponseEntity.status(202).body("Backup creation queued");

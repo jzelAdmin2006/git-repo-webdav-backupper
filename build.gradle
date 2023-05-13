@@ -32,6 +32,9 @@ dependencies {
 	implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
 	implementation group: 'com.google.guava', name: 'guava', version: '31.1-jre'
 	implementation group: 'net.lingala.zip4j', name: 'zip4j', version: '2.11.5'
+	implementation 'com.google.code.gson:gson:2.10.1'
+	implementation 'javax.xml.bind:jaxb-api:2.3.1'
+	implementation 'org.glassfish.jaxb:jaxb-runtime:2.3.1'
 }
 
 tasks.named('test') {

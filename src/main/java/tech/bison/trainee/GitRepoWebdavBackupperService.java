@@ -5,9 +5,11 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -20,6 +22,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import com.github.sardine.DavResource;
 import com.github.sardine.Sardine;
 import com.github.sardine.SardineFactory;
 
@@ -35,7 +38,9 @@ public class GitRepoWebdavBackupperService {
 	private static final String WEBDAV_URL = System.getenv("WEBDAV_URL");
 	private static final String WEBDAV_USERNAME = System.getenv("WEBDAV_USERNAME");
 	private static final String WEBDAV_PASSWORD = System.getenv("WEBDAV_PASSWORD");
+	private static final GitService GITHUB = new GitHubService(GIT_PASSWORD);
 	private static final Queue<String> backupRequests = new LinkedList<>();
+	private static final Date NEVER = null;
 	private final Lock lock = new ReentrantLock();
 
 	@Scheduled(fixedRate = 5000)
@@ -45,18 +50,52 @@ public class GitRepoWebdavBackupperService {
 		}
 	}
 
+	/**
+	 * Creates a backup of the repo according to the next entry in the queue if
+	 * there can't be found an existing backup that is for sure up-to-date
+	 */
 	@Async
 	public void createBackup() {
-		String nameOfRepoToBackup = backupRequests.poll();
+		String repoUrl = backupRequests.poll();
 		try {
-			proceedBackup(nameOfRepoToBackup);
-			System.out.println(String.format("Backup created for \"%s\"", nameOfRepoToBackup));
-		} catch (GitAPIException | IOException e) {
-			System.out.println(String.format("Backup creation for \"%s\" failed", nameOfRepoToBackup));
+			if (backupIsUpToDate(repoUrl)) {
+				System.out.println(String.format("Backup is already up-to-date for \"%s\"", repoUrl));
+			} else {
+				proceedBackup(repoUrl);
+				System.out.println(String.format("Backup created for \"%s\"", repoUrl));
+			}
+		} catch (GitAPIException | IOException | ParseException e) {
+			System.out.println(String.format("Backup creation for \"%s\" failed", repoUrl));
 			e.printStackTrace();
 		} finally {
 			lock.unlock();
 		}
+	}
+
+	private boolean backupIsUpToDate(String repoUrl) throws IOException, ParseException {
+		Date lastBackupDate = findLastBackupDate(repoUrl);
+		if (repoUrl.startsWith("https://github.com/"))
+			return lastBackupDate != NEVER && lastBackupDate.after(GITHUB.findLastCommitDate(repoUrl));
+		else
+			return false; // TODO: Implement with other Git service APIs
+	}
+
+	private Date findLastBackupDate(String repoUrl) throws IOException, ParseException {
+		Sardine sardine = SardineFactory.begin(WEBDAV_USERNAME, WEBDAV_PASSWORD);
+		List<DavResource> resources = sardine.list(WEBDAV_URL);
+		Date lastBackupped = NEVER;
+		for (DavResource res : resources) {
+			String fileName = res.getName();
+			String repoName = extractRepoName(repoUrl);
+			String pattern = String.format("^%s\\d{14}\\.zip", repoName);
+			if (res.getName().matches(pattern)) {
+				SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+				Date backupDate = dateFormat.parse(fileName.substring(fileName.length() - 18, fileName.length() - 4));
+				if (lastBackupped == NEVER || backupDate.after(lastBackupped))
+					lastBackupped = backupDate;
+			}
+		}
+		return lastBackupped;
 	}
 
 	public static Queue<String> getBackupRequests() {
@@ -67,7 +106,7 @@ public class GitRepoWebdavBackupperService {
 		Path repoDirectory = cloneRepository(repoUrl);
 		archiveRepository(repoDirectory);
 		uploadToWebDav();
-		FileUtils.cleanDirectory(GitRepoWebdavBackupperService.LOCAL_PATH.toFile());
+		FileUtils.cleanDirectory(LOCAL_PATH.toFile());
 	}
 
 	private void archiveRepository(Path repoDirectory) throws IOException {
@@ -92,7 +131,7 @@ public class GitRepoWebdavBackupperService {
 	private static void uploadToWebDav() throws IOException {
 		Sardine sardine = SardineFactory.begin(WEBDAV_USERNAME, WEBDAV_PASSWORD);
 
-		try (DirectoryStream<Path> stream = Files.newDirectoryStream(GitRepoWebdavBackupperService.LOCAL_PATH)) {
+		try (DirectoryStream<Path> stream = Files.newDirectoryStream(LOCAL_PATH)) {
 			for (Path filePath : stream) {
 				if (Files.isRegularFile(filePath)) {
 					String remotePath = WEBDAV_URL + "/" + filePath.getFileName().toString();

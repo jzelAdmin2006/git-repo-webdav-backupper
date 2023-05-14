@@ -1,20 +1,8 @@
-FROM ubuntu:latest AS build
+FROM eclipse-temurin:17-jdk-alpine
 
-RUN apt-get update
-RUN apt-get install openjdk-17-jdk -y
+WORKDIR /app
+RUN mkdir /tmpwork
 COPY . .
 
-RUN chmod +x gradlew
-RUN ./gradlew bootJar --no-daemon
-
-FROM openjdk:17-jdk-slim
-
-WORKDIR /
-
-RUN mkdir /tmpwork
-
 EXPOSE 8080
-
-COPY --from=build /build/libs/git-repo-webdav-backupper-0.0.1-SNAPSHOT.jar app.jar
-
 ENTRYPOINT ["java", "-jar", "app.jar"]

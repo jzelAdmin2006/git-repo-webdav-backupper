@@ -2,7 +2,6 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.0.6'
 	id 'io.spring.dependency-management' version '1.1.0'
-	id 'com.palantir.docker' version '0.35.0'
 }
 
 group = 'tech.bison.trainee'
@@ -11,13 +10,6 @@ sourceCompatibility = '17'
 
 repositories {
 	mavenCentral()
-}
-
-docker {
-    name "${project.name}"
-    dockerfile file('Dockerfile')
-    copySpec.from(tasks.bootJar).rename(".*", "app.jar")
-    buildArgs(['JAR_FILE': "app.jar"])
 }
 
 springBoot {
@@ -39,8 +31,4 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
-}
-
-tasks.named('build') {
-    dependsOn 'docker'
 }

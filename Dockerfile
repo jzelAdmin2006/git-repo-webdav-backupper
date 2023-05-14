@@ -16,4 +16,4 @@ RUN find . ! -name 'app.jar' -type f -exec rm -f {} +
 RUN mkdir /tmpwork
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "./build/libs/git-repo-webdav-backupper-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
